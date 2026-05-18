@@ -1,0 +1,270 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ReferenceType {
+  id               Int               @id @default(autoincrement())
+  code             String            @unique
+  name             String            @unique
+  createdBy        String?
+  createdAt        DateTime          @default(now())
+  referenceMasters ReferenceMaster[]
+
+  @@map("reference_type")
+}
+
+model ReferenceMaster {
+  id              Int            @id @default(autoincrement())
+  referenceType   String
+  referenceTypeId Int?
+  code            String
+  description     String
+  updatedBy       String
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  refType         ReferenceType? @relation(fields: [referenceTypeId], references: [id], onDelete: SetNull)
+
+  @@map("reference_master")
+}
+
+model TaxLedgerAccount {
+  id         Int         @id @default(autoincrement())
+  ledgerName String      @unique
+  taxPercent Float
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  taxMasters TaxMaster[]
+
+  @@map("tax_ledger_account")
+}
+
+model ItemGroupMaster {
+  id        Int      @id @default(autoincrement())
+  groupName String
+  store     String
+  prefix    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("item_group_master")
+}
+
+model Prefix {
+  id         Int      @id @default(autoincrement())
+  prefixCode String   @unique
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("prefix")
+}
+
+model TaxMaster {
+  id              Int              @id @default(autoincrement())
+  taxLedgerId     Int
+  taxPercent      Float
+  cgstTax         Float
+  sgstTax         Float
+  igstTax         Float
+  purchaseCgstTax Float
+  purchaseSgstTax Float
+  purchaseIgstTax Float
+  salesCgstTax    Float
+  salesSgstTax    Float
+  salesIgstTax    Float
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  taxLedger       TaxLedgerAccount @relation(fields: [taxLedgerId], references: [id], onDelete: Cascade)
+
+  @@map("tax_master")
+}
+
+model CategoryMaster {
+  id            Int                 @id @default(autoincrement())
+  categoryName  String              @unique
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  subCategories SubCategoryMaster[]
+  partNumbers   PartNumberBase[]
+
+  @@map("category_master")
+}
+
+model SubCategoryMaster {
+  id              Int              @id @default(autoincrement())
+  categoryId      Int
+  subCategoryName String
+  prefixCode      String
+  description     String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  category        CategoryMaster   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  partNumbers     PartNumberBase[]
+
+  @@unique([categoryId, subCategoryName])
+  @@map("sub_category_master")
+}
+
+model PartNumberBase {
+  id                   Int               @id @default(autoincrement())
+  categoryId           Int
+  subCategoryId        Int
+  prefixCode           String
+  digitCount           Int
+  startingNumber       Int
+  endingNumber         Int
+  currentRunningNumber Int
+  totalNumbers         Int
+  isActive             Boolean           @default(true)
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  category             CategoryMaster    @relation(fields: [categoryId], references: [id])
+  subCategory          SubCategoryMaster @relation(fields: [subCategoryId], references: [id])
+
+  @@map("part_number_base")
+}
+
+model ItemMaster {
+  id              Int                @id @default(autoincrement())
+  groupId         Int?
+  partNo          String             @unique
+  outsourcePartNo String?
+  partName        String
+  modelId         Int?
+  brand           String?
+  description     String?
+  size            String?
+  weight          Float?
+  unitId          Int?
+  hsnCode         String?
+  purchaseRate    Float?
+  marginPercent   Float?
+  rate            Float?
+  currencyId      Int?
+  taxId           Int?
+  subGroupId      Int?
+  storeId         Int?
+  rackNo          String?
+  location        String?
+  itemTypeId      Int?
+  qcTypeId        Int?
+  materialGradeId Int?
+  materialTypeId  Int?
+  rawMaterialId   Int?
+  rmLength        String?
+  rawMaterialWt   Float?
+  fgMaterialWt    Float?
+  reorderLevel    Float?
+  minStock        Float?
+  imagePath       String?
+  pdfPath         String?
+  createdBy       String?
+  updatedBy       String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  uploads         ItemMasterUpload[]
+
+  @@map("item_master")
+}
+
+model SupplierMaster {
+  id            Int      @id @default(autoincrement())
+  supplierType  String
+  sCode         String   @unique
+  supplierName  String
+  address       String?
+  address2      String?
+  address3      String?
+  address4      String?
+  city          String?
+  country       String?  @default("India")
+  state         String?
+  stateCode     String?
+  pinCode       String?
+  contactPerson String?
+  mobile        String?
+  phone         String?
+  email         String?
+  website       String?
+  gstNo         String?
+  panNo         String?
+  bankName      String?
+  branchName    String?
+  accountName   String?
+  accountNumber String?
+  ifscCode      String?
+  micrCode      String?
+  createdBy     String?
+  updatedBy     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("supplier_master")
+}
+
+model ItemMasterUpload {
+  id        Int        @id @default(autoincrement())
+  itemId    Int
+  item      ItemMaster @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  imagePath String?
+  pdfPath   String?
+  updatedBy String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@map("item_master_upload")
+}
+
+model CustomerMaster {
+  id            Int      @id @default(autoincrement())
+  customerType  String
+  cCode         String   @unique
+  customerName  String
+  address       String?
+  address2      String?
+  address3      String?
+  address4      String?
+  city          String?
+  country       String?  @default("India")
+  state         String?
+  stateCode     String?
+  pinCode       String?
+  contactPerson String?
+  mobile        String?
+  phone         String?
+  email         String?
+  website       String?
+  aadharNo      String?
+  gstNo         String?
+  panNo         String?
+  bankName      String?
+  branchName    String?
+  accountName   String?
+  accountNumber String?
+  ifscCode      String?
+  micrCode      String?
+  remarks       String?
+  createdBy     String?
+  updatedBy     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("customer_master")
+}
