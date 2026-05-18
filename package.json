@@ -8,6 +8,7 @@
     "prisma": "^7.8.0"
   },
   "scripts": {
+    "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "seed": "node prisma/seed.js",
     "seedreferencetypename": "node seedreferencetypename.js",
